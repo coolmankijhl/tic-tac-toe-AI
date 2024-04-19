@@ -2,20 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
+
+#define SIZE 9
 
 void printBoard();
-int placePiece(int pos, char piece);
 int evaluateBoard();
-int minimax(int isXsTurn);
+void placePiece(char playerPiece, char currentTurnPiece);
 
-char playerPiece;
-char botPiece;
-char userInput[5];
-
-char board[9] = {
-	'1','2','3',
-	'4','5','6',
-	'7','8','9'
+char board[SIZE] = {
+	'-','-','-',
+	'-','-','-',
+	'-','-','-'
 };
 
 const int winningCombinations[8][3] = {
@@ -24,130 +22,56 @@ const int winningCombinations[8][3] = {
 	{0, 4, 8}, {2, 4, 6}
 };
 
-// Handles User/Bot Input and places piece on board accordingly
-int placePiece(int pos, char piece)
+// Returns the char of the player who won, returns '-' if game is still going, returns 'D' if game is a draw
+char checkWinner()
 {
-	if(playerPiece == piece)
+	for(int i = 0; i < 8; i++)
 	{
-		printf("%c's turn: ", piece);
+		int a = winningCombinations[i][0];
+		int b = winningCombinations[i][1];
+		int c = winningCombinations[i][2];
 
-		scanf(" %d", &pos);
+		if(board[a] == board[b] && board[b] == board[c] && board[c] != '-')
+			return board[a];
+	}
 
-		if(board[pos-1] > 48 && board[pos-1] < 58 && pos < 10 && pos > 0)
-		{
-			board[pos-1] = piece;
+	for(int i = 0; i < SIZE; i++)
+	{
+		if(board[i] == '-')
+			return '-';
+
+	}
+
+	return 'D';
+}
+
+// Evaluates the current score of the board
+int evaluate()
+{
+	switch(checkWinner())
+	{
+		case('X'):
+			return 10;
+		case('O'):
+			return -10;
+		case('D'):
 			return 1;
-		}
-	}
-	else
-	{
-		int bestMoveScore = INT_MIN;
-		int bestMoveIndex = -1;
-
-		for(int i = 0; i < 9; i++)
-		{
-			if(board[i] != 'X' && board[i] != 'O')
-			{
-				board[i] = botPiece;
-				int moveScore = minimax(0);
-				board[i] = (i + 49);
-
-				if(moveScore > bestMoveScore)
-				{
-					bestMoveScore = moveScore;
-					bestMoveIndex = i;
-				}
-			}
-		}
-		printf("The bot picked %d\n", bestMoveIndex+1);
-		board[bestMoveIndex] = botPiece;
-		return 1;	
-	}
-
-	printBoard();
-	printf("Piece placement failed, try again\n");
-	return 0;
-}
-
-// Evaluates the current score of the board, can be used to check whether the game is over or not
-int evaluateBoard()
-{
-	for (int i = 0; i < 8; i++)
-	{
-		int a = winningCombinations[i][0],  b = winningCombinations[i][1], c = winningCombinations[i][2];
-
-		if (board[a] == board[b] && board[b] == board[c] && board[a] != (a + '1'))
-		{
-			if (board[a] == 'X')
-			{
-				//X wins
-				return -1;
-			}
-			else if (board[a] == 'O')
-			{
-				//O Wins
-				return 1;
-			}
-		}
-	}	
-
-	for(int i = 0; i < 9; i++)
-	{
-		if(board[i] != 'X' && board[i] != 'O')
-		{
+		default:
 			return 0;
-		}
-		
-		if(i == 8)
-		{
-			//Tie
-			return 0;
-		}
-	}
-
-	return 0;
-}
-
-// Recursively searches for possible moves and their scores
-int minimax(int isXsTurn)
-{
-	int score = evaluateBoard();
-
-	if(score != 0)
-		return score;
-
-	if(isXsTurn)
-	{
-		int bestScore = INT_MIN;
-		for(int i = 0; i < 9; i++)
-		{
-			if(board[i] != 'X' && board[i] != 'O')
-			{
-				board[i] = 'X';
-				bestScore = ((bestScore > minimax(0)) ? bestScore : minimax(0));
-				board[i] = (i + 49);
-			}
-		}
-		return bestScore;
-	}
-	else
-	{
-		int bestScore = INT_MAX;
-		for(int i = 0; i < 9; i++)
-		{
-			if(board[i] != 'X' && board[i] != 'O')
-			{
-				board[i] = 'O';
-				bestScore = ((bestScore > minimax(1)) ? bestScore : minimax(1));
-				board[i] = (i + 49);
-			}
-		}	
 	}
 }
 
 // Prints board to screen
 void printBoard()
 {
+
+	printf("\n");
+	printf(" 1 | 2 | 3\n");
+	printf("---|---|---\n");
+	printf(" 4 | 5 | 6\n");
+	printf("---|---|---\n");
+	printf(" 7 | 8 | 9\n");
+
 	printf("\n");
 	printf(" %c | %c | %c\n", board[0], board[1], board[2]);
 	printf("---|---|---\n");
@@ -157,33 +81,43 @@ void printBoard()
 	printf("\n");
 }
 
+// Handles User/Bot Input and places piece on board accordingly
+void placePiece(char playerPiece, char currentTurnPiece)
+{
+	int selectedSlot;
+	do
+	{
+		if(playerPiece == currentTurnPiece)
+			scanf("%d", &selectedSlot);
+		else
+			selectedSlot = rand()%9+1;
+	}
+	while(!(selectedSlot > 0 && selectedSlot < 10) || board[selectedSlot-1] != '-');
+
+	board[selectedSlot-1] = currentTurnPiece;
+}
+
 // Initalizes game settings and handles turns
 int main()
 {
-	int isXsTurn = 1;
-	int pos;
+	srand(time(NULL));
+
+	int isXTurn = 1;
 
 	printf("Would you like to be X or O: ");
+	char playerPiece = getchar();
 
-	fgets(userInput, sizeof(userInput), stdin);
-	playerPiece = userInput[0];
-
-	if(playerPiece == 'X')
-		botPiece = 'O';
-	else
-		botPiece = 'X';
-
-	while(1)
+	while(checkWinner() ==  '-')
 	{
 		printBoard();
-		if(isXsTurn)
+		if(isXTurn)
 		{
-			while(!placePiece(pos, 'X'));
+			placePiece(playerPiece, 'X');
 			isXsTurn = 0;
 		}
 		else
 		{
-			while(!placePiece(pos, 'O'));
+			placePiece(playerPiece, 'O');
 			isXsTurn = 1;
 		}
 	}
