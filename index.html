@@ -3,70 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic Tac Toe</title>
+    <title>Tic-Tac-Toe Game</title>
+    <script src="index.js"></script> <!-- Replace 'your_tictactoe_module.js' with the name of your compiled JavaScript file -->
+</head>
+<body>
+    <h1>Tic-Tac-Toe Game</h1>
+    <div id="board"></div>
+    <div id="message"></div>
+    <button onclick="startGame('X')">Play as X</button>
+    <button onclick="startGame('O')">Play as O</button>
+    <button onclick="resetBoard()">Reset Board</button>
+
     <script>
-        let wasmModule;
-
-        async function init() {
-            const response = await fetch('tic_tac_toe.wasm');
-            const buffer = await response.arrayBuffer();
-            const module = await WebAssembly.compile(buffer);
-            const instance = await WebAssembly.instantiate(module);
-            wasmModule = instance.exports;
-            startGame();
+        function startGame(playerPiece) {
+	    console.log("start");
+            Module.runGame(playerPiece.charCodeAt(0)); // 'X' or 'O' is passed as a char code
         }
 
-        function startGame() {
-            // Initialize game state, if needed
-            wasmModule.init_game();
-            // Call any other initialization functions from your C code, if required
+        function resetBoard() {
+            Module._resetBoard(); // Call the resetBoard() function from your C code
+            document.getElementById('board').innerHTML = ''; // Clear the board display
+            document.getElementById('message').innerText = ''; // Clear any messages
         }
 
-        function playMove(index) {
-            wasmModule.place_piece(index);
-            // Update the UI or perform any other actions after the move
-        }
+        // Function to update the game board on the HTML page
+        function updateBoard(boardString) {
+            var board = document.getElementById('board');
+            board.innerHTML = ''; // Clear previous board
 
-        function renderBoard() {
-            const boardElement = document.getElementById('board');
-            const board = wasmModule.get_board();
-            for (let i = 0; i < 9; i++) {
-                const cell = document.createElement('div');
-                cell.textContent = board[i];
-                cell.classList.add('cell');
-                cell.onclick = () => {
-                    if (board[i] === '-') {
-                        playMove(i);
-                        renderBoard();
-                    }
-                };
-                boardElement.appendChild(cell);
+            for (var i = 0; i < 9; i += 3) {
+                var row = document.createElement('div');
+                for (var j = 0; j < 3; j++) {
+                    var cell = document.createElement('span');
+                    cell.innerText = boardString[i + j];
+                    row.appendChild(cell);
+                }
+                board.appendChild(row);
             }
         }
 
-        window.onload = () => {
-            init();
-        };
-    </script>
-    <style>
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 2px;
+        // Function to display a message on the HTML page
+        function showMessage(message) {
+            document.getElementById('message').innerText = message;
         }
 
-        .cell {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            background-color: lightgray;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div class="board" id="board"></div>
+        // Bind C functions to JavaScript functions
+        Module.print = function(text) {
+            console.log(text); // Log C output to the console
+        };
+
+        Module.printBoard = function(boardString) {
+            updateBoard(Module.UTF8ToString(boardString)); // Update the game board
+        };
+
+        Module.gameOver = function(result) {
+            var message = 'Game Over. ';
+            if (result == 'X') {
+                message += 'X wins!';
+            } else if (result == 'O') {
+                message += 'O wins!';
+            } else {
+                message += 'It\'s a draw!';
+            }
+            showMessage(message); // Display game over message
+        };
+    </script>
 </body>
+</html>
 
