@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <script>
+        let wasmModule;
+
+        async function init() {
+            const response = await fetch('tic_tac_toe.wasm');
+            const buffer = await response.arrayBuffer();
+            const module = await WebAssembly.compile(buffer);
+            const instance = await WebAssembly.instantiate(module);
+            wasmModule = instance.exports;
+            startGame();
+        }
+
+        function startGame() {
+            // Initialize game state, if needed
+            wasmModule.init_game();
+            // Call any other initialization functions from your C code, if required
+        }
+
+        function playMove(index) {
+            wasmModule.place_piece(index);
+            // Update the UI or perform any other actions after the move
+        }
+
+        function renderBoard() {
+            const boardElement = document.getElementById('board');
+            const board = wasmModule.get_board();
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.textContent = board[i];
+                cell.classList.add('cell');
+                cell.onclick = () => {
+                    if (board[i] === '-') {
+                        playMove(i);
+                        renderBoard();
+                    }
+                };
+                boardElement.appendChild(cell);
+            }
+        }
+
+        window.onload = () => {
+            init();
+        };
+    </script>
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 2px;
+        }
+
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            background-color: lightgray;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="board" id="board"></div>
+</body>
+</html>
+
