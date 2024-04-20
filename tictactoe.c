@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <limits.h>
-#include <math.h>
 
 #define SIZE 9
 
@@ -135,7 +133,6 @@ int evaluate()
 // Prints board to screen
 void printBoard()
 {
-
 	printf("\n");
 	printf(" 1 | 2 | 3\n");
 	printf("---|---|---\n");
